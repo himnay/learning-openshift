@@ -1,0 +1,19 @@
+# ResourceQuota — standard k8s object, but far more central to daily life on OpenShift:
+# every Project (see README's Project-vs-Namespace section) commonly ships with a quota
+# from day one because OpenShift is usually a shared multi-tenant cluster with many teams'
+# Projects coexisting, whereas an EKS cluster is more often single-team/single-workload per
+# cluster with cluster-autoscaler doing the capacity planning instead.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: learning-openshift-quota
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    pods: "10"
+    services: "5"
+    persistentvolumeclaims: "4"
+    count/routes.route.openshift.io: "5" # OpenShift-specific countable resource type

@@ -1,0 +1,47 @@
+# SecurityContextConstraints (SCC) — OpenShift-only; no direct k8s/EKS equivalent (the
+# closest k8s concept is Pod Security Admission's baseline/restricted *labels*, and on EKS,
+# IAM Roles for Service Accounts (IRSA) for *AWS API* access — neither controls container
+# UID/capabilities/host-access the way an SCC does).
+#
+# This project does NOT need a custom SCC to run — the cluster-default `restricted-v2` SCC
+# (every authenticated user/serviceaccount is bound to it out of the box since OCP 4.11)
+# already covers a plain Spring Boot container: arbitrary non-root UID from the namespace's
+# allocated range, all Linux capabilities dropped, no host namespace access, no privilege
+# escalation. This file exists purely to show what one looks like and when you'd actually
+# write one — e.g. a workload needing NET_BIND_SERVICE to bind port 80/443 directly, which
+# `restricted-v2` forbids.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: learning-openshift-net-bind-scc
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+readOnlyRootFilesystem: false
+runAsUser:
+  type: MustRunAsRange # UID resolved from the project's allocated uid-range annotation
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+requiredDropCapabilities:
+  - ALL
+allowedCapabilities:
+  - NET_BIND_SERVICE # the one capability this custom SCC adds back over restricted-v2
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+# Binding: `oc adm policy add-scc-to-user learning-openshift-net-bind-scc -z <serviceaccount>`
+# — SCCs are assigned to a ServiceAccount (or user/group), never referenced from a Pod spec
+# directly; the admission controller picks the highest-priority SCC the requesting SA is
+# authorized to use and applies its constraints/defaulting to the pod at creation time.

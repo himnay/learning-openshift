@@ -1,0 +1,83 @@
+# Standard Kubernetes Deployment — identical API/behavior on OpenShift, EKS, or any
+# conformant k8s. This is the *recommended* modern path on OpenShift too (OCP 4.14+
+# deprecates DeploymentConfig — see deploymentconfig.yaml for the legacy comparison).
+# The only OpenShift-specific things touching this workload live in the surrounding
+# objects: Route (not Ingress), SCC (not a PodSecurityPolicy/IRSA), ImageStream triggers.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-openshift
+  labels:
+    app: learning-openshift
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: learning-openshift
+  template:
+    metadata:
+      labels:
+        app: learning-openshift
+    spec:
+      # No explicit runAsUser/fsGroup here — deliberately left for the SCC to assign
+      # (see openshift/scc.yaml). Hardcoding a UID here would conflict with the
+      # `restricted` SCC's arbitrary-UID requirement and fail admission.
+      containers:
+        - name: learning-openshift
+          image: image-registry.openshift-image-registry.svc:5000/learning-openshift/learning-openshift:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: learning-openshift-config
+            - secretRef:
+                name: learning-openshift-db-secret
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 2
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          # SCC's "MustRunAsNonRoot"/allowPrivilegeEscalation=false checks are enforced at
+          # admission regardless of this block, but declaring it explicitly documents intent
+          # and satisfies the `restricted-v2` SCC (the OpenShift default since OCP 4.11)
+          # without relying on the SCC's implicit defaulting.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1

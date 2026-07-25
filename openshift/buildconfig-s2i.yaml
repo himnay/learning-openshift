@@ -1,0 +1,44 @@
+# BuildConfig — no k8s/EKS equivalent (EKS needs an external CI system: CodeBuild,
+# GitHub Actions, Jenkins...). This is OpenShift's in-cluster build: Source-to-Image (S2I)
+# strategy injects this repo's source directly into the openjdk-25-ubi9 builder image, which
+# runs its own assemble/run scripts (Maven build baked into the builder) — no Dockerfile
+# needed at all for this strategy. Contrast with buildconfig-docker.yaml.
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: learning-openshift-s2i
+  labels:
+    app: learning-openshift
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/himnay/learning-openshift.git
+      ref: main
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: openjdk-25-ubi9:latest
+      forcePull: true
+  output:
+    to:
+      kind: ImageStreamTag
+      name: learning-openshift:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+    # GitHub webhook trigger — rebuild automatically on push. The generated secret must be
+    # registered against this exact URL in the GitHub repo's webhook settings.
+    - type: GitHub
+      github:
+        secretReference:
+          name: learning-openshift-github-webhook-secret
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi

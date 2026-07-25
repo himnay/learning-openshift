@@ -1,0 +1,41 @@
+# NetworkPolicy — standard k8s object; enforcement engine differs by platform. OpenShift's
+# default CNI (OVN-Kubernetes since OCP 4.12, previously OpenShift SDN) enforces these
+# natively. EKS enforces NetworkPolicy only if the VPC CNI is paired with an add-on like
+# Calico or Cilium — it is NOT enforced out of the box the way it is on OpenShift.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: learning-openshift-allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: learning-openshift
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Only the Route's namespace-local router pods (or, without Route in front, same-namespace
+    # peers) may reach the app port — same-namespace default-deny stance, opt-in for the router.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow egress to the Postgres Service pods and to DNS — deny-by-default otherwise.
+    - to:
+        - podSelector:
+            matchLabels:
+              app: learning-openshift-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

@@ -1,0 +1,14 @@
+# PodDisruptionBudget — standard k8s object, identical everywhere. Bounds *voluntary*
+# disruptions (node drains during OpenShift cluster upgrades, EKS managed node group
+# updates, `oc adm drain`) — never blocks involuntary disruption (node crash). Worth
+# calling out on OpenShift specifically because OCP's own cluster upgrades routinely drain
+# and reboot nodes one at a time; a PDB is what keeps this app available throughout.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: learning-openshift-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: learning-openshift

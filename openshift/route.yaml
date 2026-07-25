@@ -1,0 +1,28 @@
+# Route — OpenShift-only; the direct analogue of a k8s Ingress, but simpler (one host,
+# one backend Service, no IngressClass/rules matrix) and always backed by the built-in
+# HAProxy router rather than a pluggable controller (nginx/ALB on EKS). See
+# learning-k8s-openshift.md §2 for the Route vs Ingress deep dive.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: learning-openshift
+  labels:
+    app: learning-openshift
+  annotations:
+    # HAProxy-specific timeout override — no k8s/Ingress-nginx equivalent annotation is
+    # this direct; nginx-ingress uses a differently-named annotation for the same idea.
+    haproxy.router.openshift.io/timeout: 60s
+    # Ensures repeat requests from the same client land on the same pod — HAProxy-level
+    # session affinity, distinct from the Service's own sessionAffinity field.
+    haproxy.router.openshift.io/balance: roundrobin
+spec:
+  host: learning-openshift.apps.example-cluster.com # vanity hostname — set per-cluster
+  to:
+    kind: Service
+    name: learning-openshift
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

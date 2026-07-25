@@ -1,0 +1,13 @@
+# Non-secret runtime configuration — mirrors what a k8s ConfigMap does; identical
+# resource kind/API on OpenShift and vanilla Kubernetes (no OpenShift-specific fields here).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: learning-openshift-config
+  labels:
+    app: learning-openshift
+data:
+  POSTGRES_HOST: learning-openshift-postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: openshift_db
+  SPRING_PROFILES_ACTIVE: openshift

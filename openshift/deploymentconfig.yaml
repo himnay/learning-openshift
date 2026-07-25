@@ -1,0 +1,82 @@
+# DeploymentConfig — the OpenShift-original, pre-Deployment workload API. No k8s/EKS
+# equivalent. Deprecated since OCP 4.14 (still supported, security-fixes-only — use
+# deployment.yaml for new workloads) but kept here to see the two side by side.
+#
+# Key differences from apps/v1 Deployment (see learning-k8s-openshift.md §7 for more):
+#   - internally driven by a ReplicationController, not a ReplicaSet
+#   - `triggers` block: can auto-redeploy on ImageChange (new image pushed to the
+#     ImageStream) or ConfigChange (spec edited) — Deployment has no built-in trigger
+#     concept; k8s achieves the same only via an external GitOps controller (Argo CD, Flux)
+#     watching the image tag, or CI re-applying the manifest
+#   - supports custom deployment strategies (Recreate, Rolling, Custom) with pre/mid/post
+#     lifecycle hooks that run arbitrary commands — Deployment's rollout has no hook concept
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: learning-openshift-dc
+  labels:
+    app: learning-openshift
+spec:
+  replicas: 2
+  selector:
+    app: learning-openshift
+    deploymentConfig: learning-openshift-dc
+  template:
+    metadata:
+      labels:
+        app: learning-openshift
+        deploymentConfig: learning-openshift-dc
+    spec:
+      containers:
+        - name: learning-openshift
+          image: learning-openshift:latest # resolved via the ImageChange trigger below
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: learning-openshift-config
+            - secretRef:
+                name: learning-openshift-db-secret
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+  strategy:
+    type: Rolling
+    rollingParams:
+      maxUnavailable: 0
+      maxSurge: 1
+      # DeploymentConfig-only feature: run a command inside a fresh pod before traffic
+      # cuts over. No Deployment equivalent — k8s users reach for a Helm/Argo pre-install
+      # hook or a Job instead.
+      pre:
+        failurePolicy: Abort
+        execNewPod:
+          containerName: learning-openshift
+          command: ["sh", "-c", "echo pre-deploy hook — e.g. flyway:info sanity check"]
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - learning-openshift
+        from:
+          kind: ImageStreamTag
+          name: learning-openshift:latest

@@ -1,0 +1,23 @@
+# LimitRange — standard k8s object. Supplies default requests/limits to any container in
+# the Project that doesn't declare its own, and rejects ones that fall outside [min, max].
+# Paired with the ResourceQuota above: the quota caps the Project's total consumption, the
+# LimitRange keeps any single container from being defined without bounds at all.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: learning-openshift-limits
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      min:
+        cpu: 50m
+        memory: 128Mi
+      max:
+        cpu: "2"
+        memory: 2Gi

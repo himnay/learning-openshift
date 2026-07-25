@@ -1,0 +1,37 @@
+# Standard k8s Service (ClusterIP) — identical on OpenShift/EKS/any k8s. Internal
+# load balancing across the Deployment's pods is handled by kube-proxy the same way
+# everywhere; see learning-k8s-openshift.md §17 for how this composes with a Route.
+apiVersion: v1
+kind: Service
+metadata:
+  name: learning-openshift
+  labels:
+    app: learning-openshift
+spec:
+  type: ClusterIP
+  selector:
+    app: learning-openshift
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  sessionAffinity: None
+---
+# Headless-less second Service fronting the Postgres StatefulSet/Deployment, referenced by
+# openshift/configmap.yaml's POSTGRES_HOST. Not OpenShift-specific — included for a
+# self-contained manifest set.
+apiVersion: v1
+kind: Service
+metadata:
+  name: learning-openshift-postgres
+  labels:
+    app: learning-openshift-postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: learning-openshift-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

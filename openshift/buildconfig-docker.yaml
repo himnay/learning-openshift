@@ -1,0 +1,35 @@
+# BuildConfig using the Docker strategy — builds this repo's own Dockerfile in-cluster
+# (full control over the build steps, vs S2I's opinionated assemble/run scripts).
+# Same OpenShift-only in-cluster-build concept as buildconfig-s2i.yaml; pick one strategy
+# per BuildConfig name, both can coexist against the same output ImageStream.
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: learning-openshift-docker
+  labels:
+    app: learning-openshift
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/himnay/learning-openshift.git
+      ref: main
+    dockerfile: null # use the repo's own Dockerfile at the source root
+  strategy:
+    type: Docker
+    dockerStrategy:
+      forcePull: true
+  output:
+    to:
+      kind: ImageStreamTag
+      name: learning-openshift:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi

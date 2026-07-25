@@ -1,0 +1,30 @@
+# HorizontalPodAutoscaler — standard k8s object (autoscaling/v2), identical API on
+# OpenShift and EKS. Requires the metrics-server (or OpenShift's built-in equivalent,
+# wired into cluster monitoring by default) to supply the resource metrics.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: learning-openshift-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: learning-openshift
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120

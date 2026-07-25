@@ -1,0 +1,14 @@
+# ImageStream — an OpenShift-only concept (no k8s/EKS equivalent). It is a stable, movable
+# alias over one or more physical image locations (internal registry tags, or an external
+# registry via `importPolicy`). Both BuildConfigs below point their `output` at this
+# ImageStream's `:latest` tag; the Deployment's DeploymentConfig equivalent can subscribe to
+# it via an ImageChangeTrigger for automatic redeploy — see deploymentconfig.yaml.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: learning-openshift
+  labels:
+    app: learning-openshift
+spec:
+  lookupPolicy:
+    local: false

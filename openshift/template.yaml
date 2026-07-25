@@ -1,0 +1,140 @@
+# Template — OpenShift-only; no k8s/EKS equivalent (closest analogues elsewhere are Helm
+# charts or Kustomize overlays, both third-party/CNCF tools you install yourself — Template
+# processing is a built-in API verb, `oc process`, on every OpenShift cluster).
+#
+# Bundles ImageStream + BuildConfig + Deployment + Service + Route into one parameterized,
+# repeatable unit — this is what a "New App from Catalog" click in the web console
+# ultimately runs under the hood.
+#
+# Usage:
+#   oc process -f openshift/template.yaml -p APP_NAME=learning-openshift \
+#     -p GIT_URI=https://github.com/himnay/learning-openshift.git | oc apply -f -
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: learning-openshift-template
+  annotations:
+    description: "Book CRUD Spring Boot service — full BuildConfig -> ImageStream -> Deployment -> Route pipeline"
+    tags: "spring-boot,java,postgres"
+objects:
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      name: ${APP_NAME}
+  - apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: ${APP_NAME}
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${GIT_URI}
+          ref: ${GIT_REF}
+      strategy:
+        type: Source
+        sourceStrategy:
+          from:
+            kind: ImageStreamTag
+            name: openjdk-25-ubi9:latest
+      output:
+        to:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:latest
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        app: ${APP_NAME}
+        deploymentConfig: ${APP_NAME}
+      template:
+        metadata:
+          labels:
+            app: ${APP_NAME}
+            deploymentConfig: ${APP_NAME}
+        spec:
+          containers:
+            - name: ${APP_NAME}
+              image: ${APP_NAME}:latest
+              ports:
+                - containerPort: 8080
+              readinessProbe:
+                httpGet:
+                  path: /actuator/health/readiness
+                  port: 8080
+                initialDelaySeconds: 15
+              livenessProbe:
+                httpGet:
+                  path: /actuator/health/liveness
+                  port: 8080
+                initialDelaySeconds: 30
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 384Mi
+                limits:
+                  cpu: "1"
+                  memory: 768Mi
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames: ["${APP_NAME}"]
+            from:
+              kind: ImageStreamTag
+              name: ${APP_NAME}:latest
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      selector:
+        app: ${APP_NAME}
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      host: ${APP_HOSTNAME}
+      to:
+        kind: Service
+        name: ${APP_NAME}
+      port:
+        targetPort: http
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+parameters:
+  - name: APP_NAME
+    displayName: Application name
+    value: learning-openshift
+    required: true
+  - name: GIT_URI
+    displayName: Source Git repository URL
+    required: true
+  - name: GIT_REF
+    displayName: Git branch/ref to build
+    value: main
+  - name: APP_HOSTNAME
+    displayName: Public route hostname
+    value: learning-openshift.apps.example-cluster.com
+  - name: REPLICAS
+    displayName: Number of replicas
+    value: "2"

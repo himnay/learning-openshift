@@ -1,0 +1,19 @@
+# Imports Red Hat's OpenJDK Source-to-Image (S2I) builder image into the project's own
+# ImageStream namespace. The S2I BuildConfig (buildconfig-s2i.yaml) builds FROM this —
+# it is the "from" side of `strategy.sourceStrategy.from` there.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: openjdk-25-ubi9
+  labels:
+    app: learning-openshift
+spec:
+  tags:
+    - name: latest
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/ubi9/openjdk-21:latest
+      importPolicy:
+        scheduled: true
+      referencePolicy:
+        type: Local
