@@ -1,0 +1,9 @@
+spring:
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    com.org.openshift: DEBUG
+    org.hibernate.SQL: WARN

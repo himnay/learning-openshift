@@ -1,0 +1,26 @@
+### Maven ###
+target/
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### Spring Boot ###
+HELP.md
+
+### OS ###
+.DS_Store
+*.swp
+*.swo
+
+### Env / secrets ###
+.env
+*.env.local
+
+### Logs ###
+logs/

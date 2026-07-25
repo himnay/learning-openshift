@@ -1,0 +1,24 @@
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: openshift-postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: openshift_db
+      POSTGRES_USER: openshift
+      POSTGRES_PASSWORD: openshift
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openshift -d openshift_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
