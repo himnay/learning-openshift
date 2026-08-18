@@ -11,7 +11,12 @@ spec:
     kind: Deployment
     name: learning-openshift
   minReplicas: 2
-  maxReplicas: 6
+  # Capped at 4, not higher: at this Deployment's per-pod limits (cpu: "1", memory: 768Mi
+  # in deployment.yaml), 4 replicas exactly saturates this namespace's ResourceQuota
+  # (limits.cpu: "4", limits.memory: 4Gi in resourcequota.yaml). Raising this without
+  # raising the quota causes pod admission failures once the HPA tries to scale past it —
+  # keep the two in lockstep if either changes.
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
