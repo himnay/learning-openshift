@@ -1,4 +1,4 @@
-# <span style="color:hsl(217,68%,44%)">learning-openshift</span>
+# <span style="color:hsl(217,80%,58%)">learning-openshift</span>
 
 <p>Spring Boot Book CRUD microservice — a deliberately simple app used as a vehicle to learn
 <strong>OpenShift</strong> in depth, and to understand precisely how it differs from a
@@ -6,7 +6,7 @@ self-managed <strong>Kubernetes</strong> cluster (<code>kops</code>, <code>kubea
 a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older PaaS model
 (<strong>Pivotal/VMware Tanzu Cloud Foundry</strong>).</p>
 
-## <span style="color:hsl(226,68%,44%)">Table of Contents</span>
+## <span style="color:hsl(355,80%,58%)">Table of Contents</span>
 
 1. 🎯 [Purpose of this repo](#1-purpose-of-this-repo)
 2. 🧰 [Stack](#2-stack)
@@ -42,7 +42,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 ---
 
 <a id="1-purpose-of-this-repo"></a>
-## <span style="color:hsl(235,68%,44%)">1. 🎯 Purpose of this repo</span>
+## <span style="color:hsl(132,80%,58%)">1. 🎯 Purpose of this repo</span>
 
 <ul>
 
@@ -66,7 +66,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 ---
 
 <a id="2-stack"></a>
-## <span style="color:hsl(243,68%,44%)">2. 🧰 Stack</span>
+## <span style="color:hsl(270,80%,58%)">2. 🧰 Stack</span>
 
 | Component        | Version / Detail                                  |
 |-------------------|-----------------------------------------------------|
@@ -87,7 +87,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 ---
 
 <a id="3-architecture"></a>
-## <span style="color:hsl(252,68%,44%)">3. 🏗️ Architecture</span>
+## <span style="color:hsl(47,80%,50%)">3. 🏗️ Architecture</span>
 
 ```mermaid
 flowchart LR
@@ -114,9 +114,9 @@ covered in [Section 9](#9-openshift-deep-dive).
 ---
 
 <a id="4-quick-start"></a>
-## <span style="color:hsl(261,68%,44%)">4. 🚀 Quick Start</span>
+## <span style="color:hsl(185,80%,58%)">4. 🚀 Quick Start</span>
 
-### <span style="color:hsl(270,68%,44%)">4.1 Local (Docker Compose + `mvn spring-boot:run`)</span>
+### <span style="color:hsl(322,80%,58%)">4.1 Local (Docker Compose + `mvn spring-boot:run`)</span>
 
 ```bash
 # 1. Start Postgres
@@ -129,7 +129,7 @@ mvn spring-boot:run
 curl http://localhost:8080/actuator/health
 ```
 
-### <span style="color:hsl(278,68%,44%)">4.2 On OpenShift (CRC — CodeReady Containers, local single-node cluster)</span>
+### <span style="color:hsl(100,80%,58%)">4.2 On OpenShift (CRC — CodeReady Containers, local single-node cluster)</span>
 
 ```bash
 # 1. Install & start a local OpenShift cluster (one-time setup)
@@ -157,7 +157,7 @@ oc start-build learning-openshift-s2i --follow
 oc get route learning-openshift -o jsonpath='{.spec.host}'
 ```
 
-### <span style="color:hsl(287,68%,44%)">4.3 Or via the Template (one command, parameterized)</span>
+### <span style="color:hsl(237,80%,58%)">4.3 Or via the Template (one command, parameterized)</span>
 
 ```bash
 oc process -f openshift/template.yaml \
@@ -169,7 +169,7 @@ oc process -f openshift/template.yaml \
 ---
 
 <a id="5-rest-api-reference"></a>
-## <span style="color:hsl(296,68%,44%)">5. 📖 REST API Reference</span>
+## <span style="color:hsl(15,80%,58%)">5. 📖 REST API Reference</span>
 
 Base path: `/api/v1/books`
 
@@ -207,7 +207,7 @@ Validation errors and business errors both come back as
 }
 ```
 
-### <span style="color:hsl(305,68%,44%)">5.1 Live curl walkthrough (verified end-to-end against this exact codebase)</span>
+### <span style="color:hsl(152,80%,58%)">5.1 Live curl walkthrough (verified end-to-end against this exact codebase)</span>
 
 ```bash
 BASE=http://localhost:8080/api/v1/books
@@ -245,7 +245,7 @@ curl -s "$BASE/1"
 ---
 
 <a id="6-testing-strategy"></a>
-## <span style="color:hsl(314,68%,44%)">6. 🧪 Testing Strategy</span>
+## <span style="color:hsl(290,80%,58%)">6. 🧪 Testing Strategy</span>
 
 | Layer                    | Class                          | What it proves                                                        | Spring context loaded? |
 |---------------------------|----------------------------------|--------------------------------------------------------------------------|--------------------------|
@@ -268,7 +268,7 @@ mvn test
 ---
 
 <a id="7-project-structure"></a>
-## <span style="color:hsl(322,68%,44%)">7. 📁 Project Structure</span>
+## <span style="color:hsl(67,80%,50%)">7. 📁 Project Structure</span>
 
 ```
 learning-openshift/
@@ -295,9 +295,9 @@ learning-openshift/
 ---
 
 <a id="8-command-reference--everything-used-to-buildruntest-this-repo"></a>
-## <span style="color:hsl(331,68%,44%)">8. 🔨 Command Reference — everything used to build/run/test this repo</span>
+## <span style="color:hsl(205,80%,58%)">8. 🔨 Command Reference — everything used to build/run/test this repo</span>
 
-### <span style="color:hsl(340,68%,44%)">8.1 Maven</span>
+### <span style="color:hsl(342,80%,58%)">8.1 Maven</span>
 
 | Command                              | Purpose                                                             |
 |----------------------------------------|-------------------------------------------------------------------------|
@@ -312,7 +312,7 @@ learning-openshift/
 | `mvn verify -Psecurity-scan`         | OWASP dependency-check (inherited opt-in profile from `super-pom`)   |
 | `mvn test -Pmutation-test`           | PIT mutation testing (inherited opt-in profile from `super-pom`)     |
 
-### <span style="color:hsl(349,68%,44%)">8.2 Docker / Docker Compose</span>
+### <span style="color:hsl(120,80%,58%)">8.2 Docker / Docker Compose</span>
 
 | Command                       | Purpose                                  |
 |---------------------------------|-----------------------------------------|
@@ -321,24 +321,24 @@ learning-openshift/
 | `docker compose down`         | Stop and remove the Postgres container/network |
 | `docker build -t learning-openshift .` | Build the image from `Dockerfile` locally, mirroring `buildconfig-docker.yaml` |
 
-### <span style="color:hsl(357,68%,44%)">8.3 Git (setup performed for this repo)</span>
+### <span style="color:hsl(257,80%,58%)">8.3 Git (setup performed for this repo)</span>
 
 | Command                                            | Purpose                                                        |
 |-------------------------------------------------------|----------------------------------------------------------------|
 | `git init`                                          | Initialize the repo                                             |
 | `git add -A && git commit -m "..."`                 | Initial scaffold commit — required for `git-commit-id-maven-plugin` to resolve `HEAD` (the build fails without at least one commit) |
 
-### <span style="color:hsl(6,68%,44%)">8.4 `curl` (see [§5.1](#51-live-curl-walkthrough-verified-end-to-end-against-this-exact-codebase) for the full CRUD walkthrough)</span>
+### <span style="color:hsl(35,80%,58%)">8.4 `curl` (see [§5.1](#51-live-curl-walkthrough-verified-end-to-end-against-this-exact-codebase) for the full CRUD walkthrough)</span>
 
-### <span style="color:hsl(15,68%,44%)">8.5 `oc` — see the [dedicated section, §12](#12-oc-cli-command-reference)</span>
+### <span style="color:hsl(172,80%,58%)">8.5 `oc` — see the [dedicated section, §12](#12-oc-cli-command-reference)</span>
 
 ---
 
 <a id="9-openshift-deep-dive"></a>
-## <span style="color:hsl(24,68%,44%)">9. ☸️ OpenShift Deep Dive</span>
+## <span style="color:hsl(310,80%,58%)">9. ☸️ OpenShift Deep Dive</span>
 
 <a id="91-what-openshift-actually-is"></a>
-### <span style="color:hsl(33,68%,44%)">9.1 What OpenShift actually is</span>
+### <span style="color:hsl(87,80%,58%)">9.1 What OpenShift actually is</span>
 
 Red Hat OpenShift Container Platform (OCP) is a Kubernetes *distribution*: it runs an
 upstream-conformant Kubernetes control plane underneath, then layers on a curated,
@@ -355,7 +355,7 @@ OpenShift (it's still real Kubernetes underneath); what changes is *how much you
 bring yourself* versus *how much ships in the box*.
 
 <a id="92-openshift-architecture"></a>
-### <span style="color:hsl(41,68%,32%)">9.2 OpenShift architecture</span>
+### <span style="color:hsl(225,80%,58%)">9.2 OpenShift architecture</span>
 
 ![OpenShift Architecture](../learning/images/k8s/k8s-openshift-architecture.png)
 
@@ -386,7 +386,7 @@ Control-plane-level, the notable OpenShift-specific pieces on top of standard Ku
 </ul>
 
 <a id="93-openshift-vs-vanilla-kubernetes"></a>
-### <span style="color:hsl(50,68%,32%)">9.3 OpenShift vs vanilla Kubernetes</span>
+### <span style="color:hsl(2,80%,58%)">9.3 OpenShift vs vanilla Kubernetes</span>
 
 ![OpenShift vs Kubernetes](../learning/images/k8s/k8s-openshift-vs-k8s.png)
 
@@ -411,7 +411,7 @@ registry, `Deployment`, Pod Security Admission labels) — this repo deliberatel
 alongside the OpenShift-only ones) so only the *platform* layer needs rework, not the app.
 
 <a id="94-openshift-vs-amazon-eks"></a>
-### <span style="color:hsl(59,68%,32%)">9.4 OpenShift vs Amazon EKS</span>
+### <span style="color:hsl(140,80%,58%)">9.4 OpenShift vs Amazon EKS</span>
 
 This is the comparison most relevant to a working engineer choosing where a service
 actually runs in production.
@@ -433,7 +433,7 @@ actually runs in production.
 | Best fit                     | AWS-committed teams who want the lowest operational overhead and deepest AWS service integration | Regulated/hybrid/multi-cloud environments, or teams that want the security/build/registry stack unified and vendor-supported rather than assembled from separate tools |
 
 <a id="95-openshift-vs-self-managed-kubernetes-kopskubeadm"></a>
-### <span style="color:hsl(68,68%,32%)">9.5 OpenShift vs self-managed Kubernetes (kops/kubeadm)</span>
+### <span style="color:hsl(277,80%,58%)">9.5 OpenShift vs self-managed Kubernetes (kops/kubeadm)</span>
 
 `kops` (and `kubeadm` underneath most self-managed setups) provisions and manages the
 Kubernetes control plane itself — VMs, etcd, the API server — with your team owning every
@@ -450,7 +450,7 @@ subsequent upgrade, security patch, and add-on.
 | Best fit                 | Teams with strong platform engineering who want maximum control and zero platform licensing cost | Teams who want a single vendor-supported, pre-integrated platform and are willing to pay for that integration and support |
 
 <a id="96-openshift-vs-pivotalvmware-tanzu-cloud-foundry-pcf"></a>
-### <span style="color:hsl(77,68%,32%)">9.6 OpenShift vs Pivotal/VMware Tanzu Cloud Foundry (PCF)</span>
+### <span style="color:hsl(55,80%,50%)">9.6 OpenShift vs Pivotal/VMware Tanzu Cloud Foundry (PCF)</span>
 
 PCF (now VMware Tanzu Application Service) predates the Kubernetes-container era and is
 architecturally a different animal entirely, not just a different Kubernetes distribution.
@@ -471,7 +471,7 @@ no container image at all — genuinely different mental models, not just differ
 dialects.
 
 <a id="97-security-context-constraints-scc-deep-dive"></a>
-### <span style="color:hsl(85,68%,32%)">9.7 Security Context Constraints (SCC) deep dive</span>
+### <span style="color:hsl(192,80%,58%)">9.7 Security Context Constraints (SCC) deep dive</span>
 
 See [`openshift/scc.yaml`](openshift/scc.yaml) for a fully commented example. Key points:
 
@@ -497,7 +497,7 @@ See [`openshift/scc.yaml`](openshift/scc.yaml) for a fully commented example. Ke
 </ul>
 
 <a id="98-routes-vs-ingress-vs-aws-alb"></a>
-### <span style="color:hsl(94,68%,32%)">9.8 Routes vs Ingress vs AWS ALB</span>
+### <span style="color:hsl(330,80%,58%)">9.8 Routes vs Ingress vs AWS ALB</span>
 
 | | OpenShift `Route` | Kubernetes `Ingress` | EKS + AWS Load Balancer Controller |
 |---|---|---|---|
@@ -510,7 +510,7 @@ See [`openshift/route.yaml`](openshift/route.yaml) for this project's edge-TLS R
 an HAProxy timeout override.
 
 <a id="99-builds-buildconfig-s2i-imagestream"></a>
-### <span style="color:hsl(103,68%,32%)">9.9 Builds: BuildConfig, S2I, ImageStream</span>
+### <span style="color:hsl(107,80%,58%)">9.9 Builds: BuildConfig, S2I, ImageStream</span>
 
 <ul>
 
@@ -531,7 +531,7 @@ an HAProxy timeout override.
 </ul>
 
 <a id="910-deploymentconfig-vs-deployment"></a>
-### <span style="color:hsl(112,68%,32%)">9.10 DeploymentConfig vs Deployment</span>
+### <span style="color:hsl(245,80%,58%)">9.10 DeploymentConfig vs Deployment</span>
 
 ![Deployment vs DeploymentConfig](../learning/images/k8s/k8s-openshift-deployment-vs-deploymentconfig.png)
 
@@ -545,7 +545,7 @@ and lifecycle hooks (`pre`/`mid`/`post` — run an arbitrary command in a fresh 
 traffic cuts over).
 
 <a id="911-templates-vs-helm-vs-kustomize"></a>
-### <span style="color:hsl(120,68%,32%)">9.11 Templates vs Helm vs Kustomize</span>
+### <span style="color:hsl(22,80%,58%)">9.11 Templates vs Helm vs Kustomize</span>
 
 `Template` ([`openshift/template.yaml`](openshift/template.yaml)) is a built-in API verb
 (`oc process`) — every OpenShift cluster can process one with zero extra tooling installed.
@@ -555,7 +555,7 @@ remain relevant mainly for OpenShift's own "New App from Catalog" web-console fl
 processes a Template under the hood.
 
 <a id="912-multi-tenancy-project-vs-namespace"></a>
-### <span style="color:hsl(129,68%,32%)">9.12 Multi-tenancy: Project vs Namespace</span>
+### <span style="color:hsl(160,80%,58%)">9.12 Multi-tenancy: Project vs Namespace</span>
 
 ![Project vs Namespace](../learning/images/k8s/k8s-openshift-vs-k8s-2.png)
 
@@ -572,7 +572,7 @@ single-team/single-workload with capacity handled by the Cluster Autoscaler/Karp
 instead of hard per-tenant quotas.
 
 <a id="913-operators-and-olm"></a>
-### <span style="color:hsl(138,68%,32%)">9.13 Operators and OLM</span>
+### <span style="color:hsl(297,80%,58%)">9.13 Operators and OLM</span>
 
 The Operator Lifecycle Manager (OLM) and its bundled OperatorHub catalog let a cluster admin
 install, upgrade, and manage cluster-scoped software (databases, message brokers, service
@@ -582,7 +582,7 @@ you'd install OLM yourself (it's open source and works fine there too) or manage
 operator's CRDs/RBAC/upgrades by hand.
 
 <a id="914-networking-ovn-kubernetes-vs-aws-vpc-cni"></a>
-### <span style="color:hsl(147,68%,32%)">9.14 Networking: OVN-Kubernetes vs AWS VPC CNI</span>
+### <span style="color:hsl(75,80%,58%)">9.14 Networking: OVN-Kubernetes vs AWS VPC CNI</span>
 
 OpenShift's default CNI (OVN-Kubernetes since OCP 4.12, OpenShift SDN before that) is an
 overlay network — pod IPs are cluster-internal and cloud-agnostic — and **enforces
@@ -595,7 +595,7 @@ OpenShift; the same manifest applied on a stock EKS cluster would be silently ac
 the API server and **enforce nothing** without Calico/Cilium installed.
 
 <a id="915-decision-matrix--which-platform-when"></a>
-### <span style="color:hsl(156,68%,36%)">9.15 Decision matrix — which platform, when</span>
+### <span style="color:hsl(212,80%,58%)">9.15 Decision matrix — which platform, when</span>
 
 | Situation                                                          | Reach for                              |
 |-----------------------------------------------------------------------|------------------------------------------|
@@ -609,7 +609,7 @@ the API server and **enforce nothing** without Calico/Cilium installed.
 ---
 
 <a id="10-openshift-manifest-reference-openshift"></a>
-## <span style="color:hsl(164,68%,36%)">10. 📦 OpenShift Manifest Reference (`openshift/`)</span>
+## <span style="color:hsl(350,80%,58%)">10. 📦 OpenShift Manifest Reference (`openshift/`)</span>
 
 | File                                | Kind(s)                          | OpenShift-only? | Demonstrates |
 |--------------------------------------|-------------------------------------|:---:|---|
@@ -634,7 +634,7 @@ the API server and **enforce nothing** without Calico/Cilium installed.
 ---
 
 <a id="11-probes--observability"></a>
-## <span style="color:hsl(173,68%,36%)">11. 🩺 Probes & Observability</span>
+## <span style="color:hsl(127,80%,58%)">11. 🩺 Probes & Observability</span>
 
 | Endpoint                          | Used by                          |
 |--------------------------------------|--------------------------------------|
@@ -653,7 +653,7 @@ configured to include the `db` health indicator group in `application.yml`.
 ---
 
 <a id="12-oc-cli-command-reference"></a>
-## <span style="color:hsl(182,68%,36%)">12. 🔧 `oc` CLI Command Reference</span>
+## <span style="color:hsl(265,80%,58%)">12. 🔧 `oc` CLI Command Reference</span>
 
 | Command | Purpose |
 |---|---|
@@ -678,7 +678,7 @@ configured to include the `db` health indicator group in `application.yml`.
 ---
 
 <a id="13-troubleshooting"></a>
-## <span style="color:hsl(191,68%,36%)">13. 🐛 Troubleshooting</span>
+## <span style="color:hsl(42,80%,58%)">13. 🐛 Troubleshooting</span>
 
 <ul>
 
@@ -708,7 +708,7 @@ configured to include the `db` health indicator group in `application.yml`.
 ---
 
 <a id="14-references"></a>
-## <span style="color:hsl(199,68%,36%)">14. 🔗 References</span>
+## <span style="color:hsl(180,80%,58%)">14. 🔗 References</span>
 
 <ul>
 
@@ -732,7 +732,7 @@ Sources consulted for the platform comparisons in [§9](#9-openshift-deep-dive):
 ---
 
 <a id="15-interview-talking-points"></a>
-## <span style="color:hsl(208,68%,44%)">15. 💬 Interview talking points</span>
+## <span style="color:hsl(317,80%,58%)">15. 💬 Interview talking points</span>
 
 <ul>
 
