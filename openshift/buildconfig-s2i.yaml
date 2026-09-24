@@ -14,7 +14,7 @@ spec:
     type: Git
     git:
       uri: https://github.com/himnay/learning-openshift.git
-      ref: main
+      ref: master
   strategy:
     type: Source
     sourceStrategy:

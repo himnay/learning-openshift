@@ -71,11 +71,11 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 | Component        | Version / Detail                                  |
 |-------------------|-----------------------------------------------------|
 | Java              | 25                                                 |
-| Spring Boot       | 4.1.0 (via [super-pom](../super-pom))              |
-| Spring Framework  | 7.0.8                                              |
+| Spring Boot       | 4.1.1 (via [super-pom](../super-pom) 1.1.0, as of 2026) |
+| Spring Framework  | 7.0.9                                              |
 | Database          | PostgreSQL 16                                      |
-| ORM               | Spring Data JPA (Hibernate 7.4)                    |
-| Migrations        | Flyway                                             |
+| ORM               | Spring Data JPA (Hibernate 7.4.5)                  |
+| Migrations        | Flyway 12.4                                        |
 | Validation        | Jakarta Bean Validation (`@NotBlank`, `@DecimalMin`, …) |
 | Error model       | RFC 9457 `ProblemDetail` via `@RestControllerAdvice` |
 | Observability     | Spring Boot Actuator + Micrometer + Prometheus registry |
@@ -319,7 +319,7 @@ learning-openshift/
 | `docker compose up -d`        | Start Postgres in the background          |
 | `docker compose ps`           | Check container health                    |
 | `docker compose down`         | Stop and remove the Postgres container/network |
-| `docker build -t learning-openshift .` | Build the image from `Dockerfile` locally, mirroring `buildconfig-docker.yaml` |
+| `docker build --build-context m2=$HOME/.m2/repository/com/org -t learning-openshift .` | Build the image locally, mirroring `buildconfig-docker.yaml`. The named context supplies the parent POMs (`super-pom`, `learning-bom`), which are not on Maven Central — in-cluster builds need them in an internal Maven repo |
 
 ### <span style="color:hsl(257,80%,58%)">8.3 Git (setup performed for this repo)</span>
 
@@ -714,7 +714,7 @@ configured to include the `db` health indicator group in `application.yml`.
 
 - [learning-k8s-openshift.md](../learning/learning-k8s-openshift.md) — the wiki's Q&A-form
   OpenShift notes; this README is the narrative deep-dive companion.
-- [super-pom README](../super-pom/README.md) / [maven-bom (learning-bom) README](../maven-bom/README.md) — the parent POM / BOM this repo builds on.
+- [super-pom README](../super-pom/README.md) / [maven-bom (learning-bom) README](../learning-bom/README.md) — the parent POM / BOM this repo builds on.
 
 </ul>
 

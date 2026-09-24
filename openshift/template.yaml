@@ -131,7 +131,7 @@ parameters:
     required: true
   - name: GIT_REF
     displayName: Git branch/ref to build
-    value: main
+    value: master
   - name: APP_HOSTNAME
     displayName: Public route hostname
     value: learning-openshift.apps.example-cluster.com
