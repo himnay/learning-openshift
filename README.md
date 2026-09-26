@@ -57,7 +57,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
   head-to-head comparison against vanilla Kubernetes, Amazon EKS, self-managed Kubernetes
   (`kops`/`kubeadm`), and Pivotal/VMware Tanzu Cloud Foundry — the four platforms most likely
   to come up in an interview or a real platform-selection conversation.
-- Cross-reference: [learning-k8s-openshift.md](../learning/learning-k8s-openshift.md) in the
+- Cross-reference: [learning-k8s-openshift.md](https://github.com/himnay/learning/blob/main/learning-k8s-openshift.md) in the
   wiki repo covers the same ground in Q&A/interview-prep form; this README is the deeper,
   narrative version with a real running app backing every claim.
 
@@ -71,7 +71,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 | Component        | Version / Detail                                  |
 |-------------------|-----------------------------------------------------|
 | Java              | 25                                                 |
-| Spring Boot       | 4.1.1 (via [super-pom](../super-pom) 1.1.0, as of 2026) |
+| Spring Boot       | 4.1.1 (via [super-pom](https://github.com/himnay/super-pom) 1.1.3, as of 2026) |
 | Spring Framework  | 7.0.9                                              |
 | Database          | PostgreSQL 16                                      |
 | ORM               | Spring Data JPA (Hibernate 7.4.5)                  |
@@ -357,7 +357,7 @@ bring yourself* versus *how much ships in the box*.
 <a id="92-openshift-architecture"></a>
 ### <span style="color:hsl(225,80%,58%)">9.2 OpenShift architecture</span>
 
-![OpenShift Architecture](../learning/images/k8s/k8s-openshift-architecture.png)
+![OpenShift Architecture](image/k8s-openshift-architecture.png)
 
 Control-plane-level, the notable OpenShift-specific pieces on top of standard Kubernetes are:
 
@@ -388,7 +388,7 @@ Control-plane-level, the notable OpenShift-specific pieces on top of standard Ku
 <a id="93-openshift-vs-vanilla-kubernetes"></a>
 ### <span style="color:hsl(2,80%,58%)">9.3 OpenShift vs vanilla Kubernetes</span>
 
-![OpenShift vs Kubernetes](../learning/images/k8s/k8s-openshift-vs-k8s.png)
+![OpenShift vs Kubernetes](image/k8s-openshift-vs-k8s.png)
 
 | Concern                     | Vanilla Kubernetes                                   | OpenShift                                                                 |
 |-------------------------------|---------------------------------------------------------|-----------------------------------------------------------------------------|
@@ -533,7 +533,7 @@ an HAProxy timeout override.
 <a id="910-deploymentconfig-vs-deployment"></a>
 ### <span style="color:hsl(245,80%,58%)">9.10 DeploymentConfig vs Deployment</span>
 
-![Deployment vs DeploymentConfig](../learning/images/k8s/k8s-openshift-deployment-vs-deploymentconfig.png)
+![Deployment vs DeploymentConfig](image/k8s-openshift-deployment-vs-deploymentconfig.png)
 
 `DeploymentConfig` is OpenShift's original, pre-`Deployment` workload API — **deprecated
 since OCP 4.14** (security-fixes-only; use `Deployment` for new workloads), but this repo
@@ -557,7 +557,7 @@ processes a Template under the hood.
 <a id="912-multi-tenancy-project-vs-namespace"></a>
 ### <span style="color:hsl(160,80%,58%)">9.12 Multi-tenancy: Project vs Namespace</span>
 
-![Project vs Namespace](../learning/images/k8s/k8s-openshift-vs-k8s-2.png)
+![Project vs Namespace](image/k8s-openshift-vs-k8s-2.png)
 
 A `Namespace` on plain Kubernetes has no access-control envelope of its own — any
 authenticated cluster user can see every namespace and its resources unless RBAC is
@@ -604,7 +604,7 @@ the API server and **enforce nothing** without Calico/Cilium installed.
 | Heavily regulated industry needing a single supported, audited stack  | OpenShift                                |
 | Strong platform team, want zero platform licensing cost, full control | kops/kubeadm self-managed Kubernetes, or EKS |
 | Still running Cloud Foundry, evaluating a move to containers/Kubernetes | OpenShift or EKS — either is a genuine step up in portability |
-| Learning Kubernetes fundamentals for the first time                   | Any of the above — the underlying API is the same; this repo happens to target OpenShift because [learning-k8s-openshift.md](../learning/learning-k8s-openshift.md) already covered the fundamentals |
+| Learning Kubernetes fundamentals for the first time                   | Any of the above — the underlying API is the same; this repo happens to target OpenShift because [learning-k8s-openshift.md](https://github.com/himnay/learning/blob/main/learning-k8s-openshift.md) already covered the fundamentals |
 
 ---
 
@@ -644,7 +644,7 @@ the API server and **enforce nothing** without Calico/Cilium installed.
 | `GET /actuator/prometheus`        | Prometheus scrape target (Micrometer registry) |
 | `GET /actuator/info`              | Build/git provenance — populated by `super-pom`'s `git-commit-id-maven-plugin` + `spring-boot-maven-plugin build-info` goal, zero extra code |
 
-Recall from [learning-k8s-openshift.md §11](../learning/learning-k8s-openshift.md#11-can-the-healthliveness-return-200-even-if-spring-health-returns-down):
+Recall from [learning-k8s-openshift.md §17](https://github.com/himnay/learning/blob/main/learning-k8s-openshift.md#17-can-the-healthliveness-return-200-even-if-spring-health-returns-down):
 a **liveness** probe only proves the JVM process is alive — it does not care whether the
 downstream Postgres connection is healthy. Only **readiness** removes a pod from traffic
 when its DB dependency is down, which is exactly why `readiness` (not `liveness`) is
@@ -712,9 +712,9 @@ configured to include the `db` health indicator group in `application.yml`.
 
 <ul>
 
-- [learning-k8s-openshift.md](../learning/learning-k8s-openshift.md) — the wiki's Q&A-form
+- [learning-k8s-openshift.md](https://github.com/himnay/learning/blob/main/learning-k8s-openshift.md) — the wiki's Q&A-form
   OpenShift notes; this README is the narrative deep-dive companion.
-- [super-pom README](../super-pom/README.md) / [maven-bom (learning-bom) README](../learning-bom/README.md) — the parent POM / BOM this repo builds on.
+- [super-pom README](https://github.com/himnay/super-pom#readme) / [maven-bom (learning-bom) README](https://github.com/himnay/learning-bom#readme) — the parent POM / BOM this repo builds on.
 
 </ul>
 
