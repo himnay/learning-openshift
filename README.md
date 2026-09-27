@@ -76,8 +76,8 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 | Database          | PostgreSQL 16                                      |
 | ORM               | Spring Data JPA (Hibernate 7.4.5)                  |
 | Migrations        | Flyway 12.4                                        |
-| Validation        | Jakarta Bean Validation (`@NotBlank`, `@DecimalMin`, …) |
-| Error model       | RFC 9457 `ProblemDetail` via `@RestControllerAdvice` |
+| Validation        | Jakarta Bean Validation ([`@NotBlank`][NotBlank], [`@DecimalMin`][DecimalMin], …) |
+| Error model       | RFC 9457 [`ProblemDetail`][ProblemDetail] via [`@RestControllerAdvice`][RestControllerAdvice] |
 | Observability     | Spring Boot Actuator + Micrometer + Prometheus registry |
 | JSON              | Jackson 3 (`tools.jackson`) — new coordinates in Spring Boot 4.1 |
 | Tests             | JUnit 5, Mockito, AssertJ, MockMvc, Testcontainers |
@@ -250,14 +250,14 @@ curl -s "$BASE/1"
 | Layer                    | Class                          | What it proves                                                        | Spring context loaded? |
 |---------------------------|----------------------------------|--------------------------------------------------------------------------|--------------------------|
 | Unit                      | `BookServiceTest`               | Business logic in isolation — repository mocked via Mockito             | No                       |
-| Web slice                 | `BookControllerWebMvcTest`      | HTTP layer — status codes, JSON shape, validation wiring — service mocked | Partial (`@WebMvcTest`) |
-| Repository slice          | `BookRepositoryDataJpaTest`     | JPA mappings, unique constraint, query methods — real Postgres container | Partial (`@DataJpaTest`) |
-| Full integration          | `BookControllerIT`              | Entire CRUD lifecycle over real HTTP + real Postgres + real Flyway      | Full (`@SpringBootTest`) |
+| Web slice                 | `BookControllerWebMvcTest`      | HTTP layer — status codes, JSON shape, validation wiring — service mocked | Partial ([`@WebMvcTest`][WebMvcTest]) |
+| Repository slice          | `BookRepositoryDataJpaTest`     | JPA mappings, unique constraint, query methods — real Postgres container | Partial ([`@DataJpaTest`][DataJpaTest]) |
+| Full integration          | `BookControllerIT`              | Entire CRUD lifecycle over real HTTP + real Postgres + real Flyway      | Full ([`@SpringBootTest`][SpringBootTest]) |
 | Context load              | `OpenshiftApplicationTests`     | Application context assembles cleanly end to end                        | Full (`@SpringBootTest`) |
 
 All Postgres-backed tests share one Testcontainers container per JVM fork via
 `support/AbstractIntegrationTest` (`@Container @ServiceConnection`) — no manual JDBC URL wiring,
-no `@DynamicPropertySource` boilerplate per test class.
+no [`@DynamicPropertySource`][DynamicPropertySource] boilerplate per test class.
 
 ```bash
 mvn test
@@ -685,20 +685,20 @@ configured to include the `db` health indicator group in `application.yml`.
 - **`git-commit-id-maven-plugin` fails with "Could not get HEAD Ref"** — the plugin needs at
   least one commit to resolve `HEAD`; this happens on a freshly `git init`'d repo before the
   first commit. Fixed once by this repo's initial scaffold commit.
-- **`@WebMvcTest`/`@DataJpaTest` "cannot find symbol"** — Spring Boot 4.1 split these
+- **[`@WebMvcTest`][WebMvcTest]/[`@DataJpaTest`][DataJpaTest] "cannot find symbol"** — Spring Boot 4.1 split these
   annotations out of `spring-boot-test-autoconfigure` into per-technology modules:
   `spring-boot-webmvc-test` (`org.springframework.boot.webmvc.test.autoconfigure.*`),
   `spring-boot-data-jpa-test` (`org.springframework.boot.data.jpa.test.autoconfigure.*`),
   `spring-boot-jdbc-test` (`org.springframework.boot.jdbc.test.autoconfigure.*`). All three
   are already added as `test`-scope dependencies in this repo's `pom.xml`.
-- **Jackson `ObjectMapper` "package does not exist"** — Spring Boot 4.1 moved to "Jackson 3"
+- **Jackson [`ObjectMapper`][ObjectMapper] "package does not exist"** — Spring Boot 4.1 moved to "Jackson 3"
   under the `tools.jackson` package (not `com.fasterxml.jackson`). Already handled in this
   repo's test imports.
-- **A `@RestControllerAdvice` handler seems to be skipped, generic `"Bad Request"` comes back
-  instead** — Spring's own built-in `ProblemDetail` handling (enabled via
+- **A [`@RestControllerAdvice`][RestControllerAdvice] handler seems to be skipped, generic `"Bad Request"` comes back
+  instead** — Spring's own built-in [`ProblemDetail`][ProblemDetail] handling (enabled via
   `spring.mvc.problemdetails.enabled: true`) can win the resolver-ordering race against a
   custom advice bean with no explicit order. Fix: annotate the custom advice with
-  `@Order(Ordered.HIGHEST_PRECEDENCE)` — already applied to `GlobalExceptionHandler`.
+  [`@Order(Ordered.HIGHEST_PRECEDENCE)`][Order] — already applied to `GlobalExceptionHandler`.
 - **Postgres port clash with a sibling repo** — this repo maps Postgres to host port
   `5434` (not `5432`/`5433`, already used by other `learning-*` repos) specifically to allow
   running alongside them.
@@ -759,3 +759,16 @@ Sources consulted for the platform comparisons in [§9](#9-openshift-deep-dive):
   `Dockerfile` + `openshift/deployment.yaml` pair is exactly that shift made concrete.
 
 </ul>
+
+<!-- Library classes mentioned above, linked to their source at the versions this project builds with. -->
+
+[DataJpaTest]: https://github.com/spring-projects/spring-boot/blob/v4.1.1/module/spring-boot-data-jpa-test/src/main/java/org/springframework/boot/data/jpa/test/autoconfigure/DataJpaTest.java
+[DecimalMin]: https://github.com/jakartaee/validation/blob/3.1.1/src/main/java/jakarta/validation/constraints/DecimalMin.java
+[DynamicPropertySource]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-test/src/main/java/org/springframework/test/context/DynamicPropertySource.java
+[NotBlank]: https://github.com/jakartaee/validation/blob/3.1.1/src/main/java/jakarta/validation/constraints/NotBlank.java
+[ObjectMapper]: https://github.com/FasterXML/jackson-databind/blob/jackson-databind-3.1.5/src/main/java/tools/jackson/databind/ObjectMapper.java
+[Order]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-core/src/main/java/org/springframework/core/annotation/Order.java
+[ProblemDetail]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-web/src/main/java/org/springframework/http/ProblemDetail.java
+[RestControllerAdvice]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-web/src/main/java/org/springframework/web/bind/annotation/RestControllerAdvice.java
+[SpringBootTest]: https://github.com/spring-projects/spring-boot/blob/v4.1.1/core/spring-boot-test/src/main/java/org/springframework/boot/test/context/SpringBootTest.java
+[WebMvcTest]: https://github.com/spring-projects/spring-boot/blob/v4.1.1/module/spring-boot-webmvc-test/src/main/java/org/springframework/boot/webmvc/test/autoconfigure/WebMvcTest.java
