@@ -1,0 +1,88 @@
+# PostgreSQL for the app: the workload behind service.yaml's learning-openshift-postgres
+# Service (selector app: learning-openshift-postgres) and networkpolicy.yaml's egress rule.
+# Plain Kubernetes objects, but the image matters on OpenShift: the restricted-v2 SCC runs
+# the pod as an arbitrary UID, and Docker Hub's `postgres` image expects to chown its data
+# directory as root. The Software Collections image (quay.io/sclorg/postgresql-16-c9s, the
+# upstream of Red Hat's rhel9/postgresql-16) is built for an arbitrary UID in group 0.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: learning-openshift-postgres-data
+  labels:
+    app: learning-openshift-postgres
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-openshift-postgres
+  labels:
+    app: learning-openshift-postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # ReadWriteOnce volume: the old pod must let go of it first
+  selector:
+    matchLabels:
+      app: learning-openshift-postgres
+  template:
+    metadata:
+      labels:
+        app: learning-openshift-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: quay.io/sclorg/postgresql-16-c9s:latest
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: learning-openshift-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: learning-openshift-db-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: learning-openshift-config
+                  key: POSTGRES_DB
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-p", "5432"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-p", "5432"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/pgsql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: learning-openshift-postgres-data

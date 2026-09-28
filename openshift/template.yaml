@@ -4,7 +4,12 @@
 #
 # Bundles ImageStream + BuildConfig + Deployment + Service + Route into one parameterized,
 # repeatable unit — this is what a "New App from Catalog" click in the web console
-# ultimately runs under the hood.
+# ultimately runs under the hood. The build is the Java 27 Docker strategy (see
+# buildconfig-docker.yaml); the Deployment redeploys on every new image through OpenShift's
+# image trigger annotation (DeploymentConfig is deprecated since OCP 4.14).
+#
+# Apply configmap.yaml, secret.yaml, postgres.yaml and service.yaml first: the Deployment
+# reads ${APP_NAME}-config / ${APP_NAME}-db-secret and needs the database.
 #
 # Usage:
 #   oc process -f openshift/template.yaml -p APP_NAME=learning-openshift \
@@ -21,6 +26,23 @@ objects:
     kind: ImageStream
     metadata:
       name: ${APP_NAME}
+    spec:
+      lookupPolicy:
+        local: true # lets the Deployment's bare "${APP_NAME}:latest" resolve to this stream
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      name: sapmachine
+    spec:
+      tags:
+        - name: 27-jre-alpine
+          from:
+            kind: DockerImage
+            name: docker.io/library/sapmachine:27-jre-alpine
+          importPolicy:
+            scheduled: true
+          referencePolicy:
+            type: Local
   - apiVersion: build.openshift.io/v1
     kind: BuildConfig
     metadata:
@@ -32,11 +54,11 @@ objects:
           uri: ${GIT_URI}
           ref: ${GIT_REF}
       strategy:
-        type: Source
-        sourceStrategy:
+        type: Docker
+        dockerStrategy:
           from:
             kind: ImageStreamTag
-            name: openjdk-25-ubi9:latest
+            name: sapmachine:27-jre-alpine
       output:
         to:
           kind: ImageStreamTag
@@ -44,28 +66,38 @@ objects:
       triggers:
         - type: ConfigChange
         - type: ImageChange
-  - apiVersion: apps.openshift.io/v1
-    kind: DeploymentConfig
+          imageChange: {}
+  - apiVersion: apps/v1
+    kind: Deployment
     metadata:
       name: ${APP_NAME}
       labels:
         app: ${APP_NAME}
+      annotations:
+        image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"${APP_NAME}:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APP_NAME}\")].image"}]'
     spec:
       replicas: ${{REPLICAS}}
       selector:
-        app: ${APP_NAME}
-        deploymentConfig: ${APP_NAME}
+        matchLabels:
+          app: ${APP_NAME}
       template:
         metadata:
           labels:
             app: ${APP_NAME}
-            deploymentConfig: ${APP_NAME}
         spec:
           containers:
             - name: ${APP_NAME}
               image: ${APP_NAME}:latest
               ports:
                 - containerPort: 8080
+              envFrom:
+                - configMapRef:
+                    name: ${APP_NAME}-config
+                - secretRef:
+                    name: ${APP_NAME}-db-secret
+              env:
+                - name: JDK_JAVA_OPTIONS
+                  value: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC"
               readinessProbe:
                 httpGet:
                   path: /actuator/health/readiness
@@ -83,15 +115,6 @@ objects:
                 limits:
                   cpu: "1"
                   memory: 768Mi
-      triggers:
-        - type: ConfigChange
-        - type: ImageChange
-          imageChangeParams:
-            automatic: true
-            containerNames: ["${APP_NAME}"]
-            from:
-              kind: ImageStreamTag
-              name: ${APP_NAME}:latest
   - apiVersion: v1
     kind: Service
     metadata:

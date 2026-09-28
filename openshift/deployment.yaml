@@ -9,6 +9,11 @@ metadata:
   name: learning-openshift
   labels:
     app: learning-openshift
+  annotations:
+    # OpenShift's image trigger for plain Deployments — the replacement for DeploymentConfig's
+    # ImageChangeTrigger. When a build pushes a new learning-openshift:latest, the trigger
+    # controller writes the new image digest into the container below, which starts a rollout.
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"learning-openshift:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"learning-openshift\")].image"}]'
 spec:
   replicas: 2
   selector:
@@ -34,7 +39,11 @@ spec:
             - secretRef:
                 name: learning-openshift-db-secret
           env:
-            - name: JAVA_OPTS
+            # Read by the `java` launcher itself, so it reaches the JVM under the Dockerfile's
+            # exec-form `java -jar` ENTRYPOINT and under the S2I image's run script alike. The
+            # JAVA_OPTS used here before is only a wrapper-script convention: the Dockerfile
+            # image ignored it, and the pods ran with default heap/metaspace settings.
+            - name: JDK_JAVA_OPTIONS
               value: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs"
           livenessProbe:
             httpGet:

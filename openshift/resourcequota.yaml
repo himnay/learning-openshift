@@ -7,12 +7,21 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: learning-openshift-quota
+#
+# Sized for the Deployment path at its peak (keep in lockstep with hpa.yaml and the pods'
+# resources), requests / limits:
+#   app      5 pods = HPA max 4 + 1 rolling-update surge  1250m 1920Mi / 5 cpu 3840Mi
+#   build    1 BuildConfig pod                             500m  512Mi / 1 cpu   1Gi
+#   postgres 1 pod (postgres.yaml)                         100m  256Mi / 500m  512Mi
+#   total                                                 1850m 2688Mi / 6.5 cpu 5376Mi
+# Quota admission rejects any pod that would cross a line below — too tight, and at max scale
+# a rollout can't create its surge pod and a build can't start.
 spec:
   hard:
     requests.cpu: "2"
-    requests.memory: 2Gi
-    limits.cpu: "4"
-    limits.memory: 4Gi
+    requests.memory: 3Gi
+    limits.cpu: "7"
+    limits.memory: 6Gi
     pods: "10"
     services: "5"
     persistentvolumeclaims: "4"
