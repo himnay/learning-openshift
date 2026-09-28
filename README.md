@@ -70,8 +70,8 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 
 | Component        | Version / Detail                                  |
 |-------------------|-----------------------------------------------------|
-| Java              | 25                                                 |
-| Spring Boot       | 4.1.1 (via [super-pom](https://github.com/himnay/super-pom) 1.1.3, as of 2026) |
+| Java              | 27 — images on SapMachine 27; the S2I build path is Java 25 ([§9.9](#99-builds-buildconfig-s2i-imagestream)) |
+| Spring Boot       | 4.1.1 (via [super-pom](https://github.com/himnay/super-pom) 1.2.0, as of Sep 2026) |
 | Spring Framework  | 7.0.9                                              |
 | Database          | PostgreSQL 16                                      |
 | ORM               | Spring Data JPA (Hibernate 7.4.5)                  |
@@ -80,8 +80,8 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 | Error model       | RFC 9457 [`ProblemDetail`][ProblemDetail] via [`@RestControllerAdvice`][RestControllerAdvice] |
 | Observability     | Spring Boot Actuator + Micrometer + Prometheus registry |
 | JSON              | Jackson 3 (`tools.jackson`) — new coordinates in Spring Boot 4.1 |
-| Tests             | JUnit 5, Mockito, AssertJ, MockMvc, Testcontainers |
-| Build             | Maven 3.9+ (no wrapper — matches sibling repos)     |
+| Tests             | JUnit 6, Mockito, AssertJ, MockMvc, Testcontainers |
+| Build             | Maven 3.9+, or the Maven Wrapper `./mvnw` (Maven 3.9.16) that the Docker build stage uses |
 | Container runtime target | OpenShift (CRC locally) / any conformant Kubernetes |
 
 ---
@@ -143,21 +143,30 @@ oc new-project learning-openshift
 # 3. Apply the whole manifest set
 oc apply -f openshift/configmap.yaml
 oc apply -f openshift/secret.yaml
+oc apply -f openshift/postgres.yaml               # PostgreSQL 16 + its PVC
 oc apply -f openshift/imagestream.yaml
-oc apply -f openshift/imagestream-java-builder.yaml
-oc apply -f openshift/buildconfig-s2i.yaml
+oc apply -f openshift/buildconfig-docker.yaml     # Java 27 build (+ the sapmachine base ImageStream)
 oc apply -f openshift/deployment.yaml
 oc apply -f openshift/service.yaml
 oc apply -f openshift/route.yaml
 
 # 4. Trigger the first build (pulls source, builds, pushes to the ImageStream)
-oc start-build learning-openshift-s2i --follow
+oc start-build learning-openshift-docker --follow
 
 # 5. Get the public URL
 oc get route learning-openshift -o jsonpath='{.spec.host}'
 ```
 
+The in-cluster build has to resolve this repo's parent POMs (`super-pom`, `learning-bom`),
+which are not on Maven Central: publish them to an internal Maven repository first (see the
+[`Dockerfile`](Dockerfile) header). The S2I alternative — `imagestream-java-builder.yaml` +
+`buildconfig-s2i.yaml` — builds Java 25 bytecode; [§9.9](#99-builds-buildconfig-s2i-imagestream)
+explains why.
+
 ### <span style="color:hsl(237,80%,58%)">4.3 Or via the Template (one command, parameterized)</span>
+
+Apply `configmap.yaml`, `secret.yaml`, `postgres.yaml` and `service.yaml` first — the
+template's Deployment reads that config and needs the database.
 
 ```bash
 oc process -f openshift/template.yaml \
@@ -308,7 +317,6 @@ learning-openshift/
 | `mvn clean package`                  | Produce the runnable fat jar in `target/`                            |
 | `mvn clean install`                  | Package + install to the local `~/.m2` repository                    |
 | `mvn dependency:tree`                | Print the fully resolved dependency graph                            |
-| `mvn flyway:info`                    | Show applied vs pending Flyway migrations                            |
 | `mvn verify -Psecurity-scan`         | OWASP dependency-check (inherited opt-in profile from `super-pom`)   |
 | `mvn test -Pmutation-test`           | PIT mutation testing (inherited opt-in profile from `super-pom`)     |
 
@@ -319,6 +327,7 @@ learning-openshift/
 | `docker compose up -d`        | Start Postgres in the background          |
 | `docker compose ps`           | Check container health                    |
 | `docker compose down`         | Stop and remove the Postgres container/network |
+| `docker compose exec postgres psql -U openshift -d openshift_db -c 'table flyway_schema_history'` | Show the applied Flyway migrations (the Flyway Maven plugin isn't configured in this pom, so `mvn flyway:info` can't connect) |
 | `docker build --build-context m2=$HOME/.m2/repository/com/org -t learning-openshift .` | Build the image locally, mirroring `buildconfig-docker.yaml`. The named context supplies the parent POMs (`super-pom`, `learning-bom`), which are not on Maven Central — in-cluster builds need them in an internal Maven repo |
 
 ### <span style="color:hsl(257,80%,58%)">8.3 Git (setup performed for this repo)</span>
@@ -518,15 +527,22 @@ an HAProxy timeout override.
   entirely separate system (CodeBuild, GitHub Actions, Jenkins) outside the cluster.
 - **Source-to-Image (S2I)** ([`buildconfig-s2i.yaml`](openshift/buildconfig-s2i.yaml)) injects
   this repo's source straight into a builder image (`openjdk-25-ubi9`) that already knows how
-  to `assemble`/`run` a Maven project — **no Dockerfile needed at all**.
+  to `assemble`/`run` a Maven project — **no Dockerfile needed at all**. The price: the
+  builder image decides the JDK. Red Hat ships UBI OpenJDK builders for LTS releases only, so
+  there is no JDK 27 builder, and the S2I build compiles Java 25 bytecode instead
+  (`MAVEN_ARGS_APPEND=-Djava.version=25 -Denforcer.skip=true …` in the BuildConfig).
 - The **Docker strategy** ([`buildconfig-docker.yaml`](openshift/buildconfig-docker.yaml))
   builds this repo's own [`Dockerfile`](Dockerfile) in-cluster instead — full control, more
-  boilerplate.
+  boilerplate, and any JDK: this is the Java 27 path, on SapMachine 27 images (Temurin 27
+  images weren't on Docker Hub yet). Its `dockerStrategy.from` points at a `sapmachine`
+  ImageStream, so a new SapMachine 27 patch release triggers a rebuild on its own.
 - **`ImageStream`** is a stable, movable alias over physical image locations — think "a
   branch pointer for container image tags." Both BuildConfigs above push to the same
   ImageStream's `:latest` tag; `DeploymentConfig`'s `ImageChangeTrigger`
-  ([`deploymentconfig.yaml`](openshift/deploymentconfig.yaml)) watches that tag and
-  auto-redeploys the instant a new image lands — with zero external GitOps controller.
+  ([`deploymentconfig.yaml`](openshift/deploymentconfig.yaml)) and the Deployment's
+  `image.openshift.io/triggers` annotation ([`deployment.yaml`](openshift/deployment.yaml))
+  both watch that tag and auto-redeploy the instant a new image lands — with zero external
+  GitOps controller.
 
 </ul>
 
@@ -539,10 +555,11 @@ an HAProxy timeout override.
 since OCP 4.14** (security-fixes-only; use `Deployment` for new workloads), but this repo
 ships both ([`deployment.yaml`](openshift/deployment.yaml) and
 [`deploymentconfig.yaml`](openshift/deploymentconfig.yaml)) side by side specifically so the
-diff is visible. The two things `DeploymentConfig` can do that `Deployment` genuinely
-cannot: built-in `ImageChangeTrigger` (auto-redeploy on new image, no external controller),
-and lifecycle hooks (`pre`/`mid`/`post` — run an arbitrary command in a fresh pod before
-traffic cuts over).
+diff is visible. Its `ImageChangeTrigger` (auto-redeploy on new image, no external
+controller) is no longer unique: on OpenShift a `Deployment` gets the same behaviour from the
+`image.openshift.io/triggers` annotation, which `deployment.yaml` uses. What `Deployment`
+genuinely cannot do is lifecycle hooks (`pre`/`mid`/`post` — run an arbitrary command in a
+fresh pod before traffic cuts over).
 
 <a id="911-templates-vs-helm-vs-kustomize"></a>
 ### <span style="color:hsl(22,80%,58%)">9.11 Templates vs Helm vs Kustomize</span>
@@ -613,23 +630,24 @@ the API server and **enforce nothing** without Calico/Cilium installed.
 
 | File                                | Kind(s)                          | OpenShift-only? | Demonstrates |
 |--------------------------------------|-------------------------------------|:---:|---|
-| `deployment.yaml`                   | `Deployment`                        | No | The portable, recommended-since-OCP-4.14 workload API; SCC-friendly (no hardcoded UID) |
+| `deployment.yaml`                   | `Deployment`                        | No | The portable, recommended-since-OCP-4.14 workload API; SCC-friendly (no hardcoded UID); redeploys on new images via the `image.openshift.io/triggers` annotation |
 | `deploymentconfig.yaml`             | `DeploymentConfig`                  | **Yes** | Legacy workload API; `ImageChangeTrigger`, `pre` lifecycle hook |
 | `service.yaml`                      | `Service` (×2)                      | No | ClusterIP for the app + for Postgres |
 | `route.yaml`                        | `Route`                             | **Yes** | Edge TLS termination, HAProxy timeout/balance annotations |
 | `imagestream.yaml`                  | `ImageStream`                       | **Yes** | Movable alias over the app's built images |
-| `imagestream-java-builder.yaml`     | `ImageStream`                       | **Yes** | Imports the RHEL UBI OpenJDK S2I builder image |
-| `buildconfig-s2i.yaml`              | `BuildConfig`                       | **Yes** | Source-to-Image strategy, GitHub webhook + ImageChange triggers |
-| `buildconfig-docker.yaml`           | `BuildConfig`                       | **Yes** | Docker strategy building this repo's own `Dockerfile` in-cluster |
-| `template.yaml`                     | `Template`                          | **Yes** | Parameterized bundle of every object above, `oc process`-able |
+| `imagestream-java-builder.yaml`     | `ImageStream`                       | **Yes** | Imports the RHEL UBI OpenJDK 25 S2I builder image (LTS only — no JDK 27 builder) |
+| `buildconfig-s2i.yaml`              | `BuildConfig`                       | **Yes** | Source-to-Image strategy (Java 25), GitHub webhook + ImageChange triggers |
+| `buildconfig-docker.yaml`           | `ImageStream` + `BuildConfig`       | **Yes** | Docker strategy building this repo's own `Dockerfile` in-cluster (Java 27, SapMachine); rebuilds on a new base image |
+| `template.yaml`                     | `Template`                          | **Yes** | Parameterized bundle (ImageStreams, Docker-strategy BuildConfig, Deployment, Service, Route), `oc process`-able |
 | `configmap.yaml`                    | `ConfigMap`                         | No | Non-secret runtime config |
 | `secret.yaml`                       | `Secret`                            | No | DB credentials shape (placeholder values — see file header) |
+| `postgres.yaml`                     | `PersistentVolumeClaim` + `Deployment` | No | PostgreSQL 16 on the arbitrary-UID-friendly `sclorg` image, behind `service.yaml`'s Postgres Service |
 | `scc.yaml`                          | `SecurityContextConstraints`        | **Yes** | Custom SCC adding `NET_BIND_SERVICE` over the `restricted-v2` default |
-| `resourcequota.yaml`                | `ResourceQuota`                     | No | Project-wide caps, including an OpenShift-specific countable (`count/routes...`) |
+| `resourcequota.yaml`                | `ResourceQuota`                     | No | Project-wide caps sized for peak load (HPA max + surge pod + build + Postgres), including an OpenShift-specific countable (`count/routes...`) |
 | `limitrange.yaml`                   | `LimitRange`                        | No | Per-container default/min/max requests+limits |
 | `networkpolicy.yaml`                | `NetworkPolicy`                     | No (enforcement differs — [§9.14](#914-networking-ovn-kubernetes-vs-aws-vpc-cni)) | Default-deny + explicit allow rules for ingress/egress |
 | `poddisruptionbudget.yaml`          | `PodDisruptionBudget`               | No | Keeps the app available through node drains/cluster upgrades |
-| `hpa.yaml`                          | `HorizontalPodAutoscaler`           | No | CPU + memory based autoscaling, 2–6 replicas |
+| `hpa.yaml`                          | `HorizontalPodAutoscaler`           | No | CPU + memory based autoscaling, 2–4 replicas |
 
 ---
 
@@ -661,7 +679,8 @@ configured to include the `db` health indicator group in `application.yml`.
 | `oc new-project learning-openshift` | Create a Project (self-service Namespace + RBAC scaffolding) |
 | `oc apply -f openshift/<file>.yaml` | Apply any manifest in this repo |
 | `oc process -f openshift/template.yaml -p KEY=VALUE \| oc apply -f -` | Process + apply the parameterized Template |
-| `oc start-build learning-openshift-s2i --follow` | Trigger an S2I build and stream its logs |
+| `oc start-build learning-openshift-docker --follow` | Trigger a Docker-strategy (Java 27) build and stream its logs |
+| `oc start-build learning-openshift-s2i --follow` | Trigger an S2I (Java 25) build and stream its logs |
 | `oc get is learning-openshift -o yaml` | Inspect the ImageStream's resolved tags |
 | `oc get bc` / `oc get builds` | List BuildConfigs / individual Build runs |
 | `oc logs -f bc/learning-openshift-s2i` | Stream a build's logs |
@@ -699,6 +718,10 @@ configured to include the `db` health indicator group in `application.yml`.
   `spring.mvc.problemdetails.enabled: true`) can win the resolver-ordering race against a
   custom advice bean with no explicit order. Fix: annotate the custom advice with
   [`@Order(Ordered.HIGHEST_PRECEDENCE)`][Order] — already applied to `GlobalExceptionHandler`.
+- **Pod dies at startup with `UnsupportedClassVersionError` … "class file version 71.0"** — the
+  app is compiled for Java 27 (class file 71) and the image's JVM is older. Run it on a JDK 27+
+  image: the [`Dockerfile`](Dockerfile) uses SapMachine 27. Red Hat's UBI OpenJDK images stop
+  at 25 (LTS only), which is why the S2I build compiles Java 25 instead.
 - **Postgres port clash with a sibling repo** — this repo maps Postgres to host port
   `5434` (not `5432`/`5433`, already used by other `learning-*` repos) specifically to allow
   running alongside them.
