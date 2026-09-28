@@ -2,6 +2,33 @@
 # (full control over the build steps, vs S2I's opinionated assemble/run scripts).
 # Same OpenShift-only in-cluster-build concept as buildconfig-s2i.yaml; pick one strategy
 # per BuildConfig name, both can coexist against the same output ImageStream.
+#
+# This is the Java 27 build: the Dockerfile compiles on sapmachine:27-jdk-ubuntu and runs on
+# sapmachine:27-jre-alpine (Temurin 27 images weren't on Docker Hub yet; Red Hat's UBI images
+# stop at the LTS JDK 25). The in-cluster build still needs the parent POMs from an internal
+# Maven repository — see the Dockerfile header.
+#
+# The ImageStream below tracks the runtime base image. `dockerStrategy.from` points at it, so
+# OpenShift swaps it into the Dockerfile's last FROM (same image, pinned to the imported
+# digest) and the ImageChange trigger rebuilds the app whenever SapMachine publishes a new
+# 27 patch release.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: sapmachine
+  labels:
+    app: learning-openshift
+spec:
+  tags:
+    - name: 27-jre-alpine
+      from:
+        kind: DockerImage
+        name: docker.io/library/sapmachine:27-jre-alpine
+      importPolicy:
+        scheduled: true
+      referencePolicy:
+        type: Local
+---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
@@ -18,6 +45,9 @@ spec:
   strategy:
     type: Docker
     dockerStrategy:
+      from:
+        kind: ImageStreamTag
+        name: sapmachine:27-jre-alpine
       forcePull: true
   output:
     to:
@@ -25,7 +55,8 @@ spec:
       name: learning-openshift:latest
   triggers:
     - type: ConfigChange
-    - type: ImageChange
+    - type: ImageChange # fires on a new sapmachine:27-jre-alpine import (dockerStrategy.from)
+      imageChange: {}
   resources:
     limits:
       cpu: "1"

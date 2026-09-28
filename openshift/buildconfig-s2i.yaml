@@ -3,6 +3,11 @@
 # strategy injects this repo's source directly into the openjdk-25-ubi9 builder image, which
 # runs its own assemble/run scripts (Maven build baked into the builder) — no Dockerfile
 # needed at all for this strategy. Contrast with buildconfig-docker.yaml.
+#
+# The builder image decides the JDK: Red Hat's newest S2I builder is OpenJDK 25 (LTS only),
+# so this build targets Java 25 bytecode, not the Java 27 the rest of the repo builds.
+# In-cluster, Maven must also reach the parent POMs (super-pom, learning-bom), which are not
+# on Maven Central: set MAVEN_MIRROR_URL to an internal repository that has them.
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
@@ -22,13 +27,21 @@ spec:
         kind: ImageStreamTag
         name: openjdk-25-ubi9:latest
       forcePull: true
+      env:
+        # Appended to the builder's `mvn package` command line:
+        #   -Djava.version=25  compile for the builder's JDK 25 (super-pom defaults to 27)
+        #   -Denforcer.skip    super-pom's enforcer rule requires a JDK 27 build
+        #   -Dmaven.gitcommitid.skip  S2I strips .git from the injected source
+        - name: MAVEN_ARGS_APPEND
+          value: "-Djava.version=25 -Denforcer.skip=true -Dmaven.gitcommitid.skip=true"
   output:
     to:
       kind: ImageStreamTag
       name: learning-openshift:latest
   triggers:
     - type: ConfigChange
-    - type: ImageChange
+    - type: ImageChange # rebuild when Red Hat publishes a new openjdk-25 builder
+      imageChange: {}
     # GitHub webhook trigger — rebuild automatically on push. The generated secret must be
     # registered against this exact URL in the GitHub repo's webhook settings.
     - type: GitHub
