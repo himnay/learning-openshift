@@ -18,9 +18,9 @@ import org.springframework.test.context.ActiveProfiles;
  * instead of swapping in an in-memory H2 database).
  */
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @DisplayName("BookRepository @DataJpaTest slice")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class BookRepositoryDataJpaTest extends AbstractIntegrationTest {
 
     @Autowired
