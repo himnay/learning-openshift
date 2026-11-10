@@ -71,7 +71,7 @@ a managed cloud Kubernetes service (<strong>Amazon EKS</strong>), and the older 
 | Component        | Version / Detail                                  |
 |-------------------|-----------------------------------------------------|
 | Java              | 27 — images on SapMachine 27; the S2I build path is Java 25 ([§9.9](#99-builds-buildconfig-s2i-imagestream)) |
-| Spring Boot       | 4.1.1 (via [super-pom](https://github.com/himnay/super-pom) 1.2.0, as of Sep 2026) |
+| Spring Boot       | 4.1.2 (via [super-pom](https://github.com/himnay/super-pom) 1.2.2, as of Sep 2026) |
 | Spring Framework  | 7.0.9                                              |
 | Database          | PostgreSQL 16                                      |
 | ORM               | Spring Data JPA (Hibernate 7.4.5)                  |
